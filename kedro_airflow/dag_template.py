@@ -33,20 +33,15 @@ from slugify import slugify
 
 from kedro_airflow.runner import AirflowRunner
 
-{%- if context_compatibility_mode %}
-from kedro.cli.cli import get_project_context  # isort:skip
-{%- else %}
+{%- if kedro_version == 16 %}
+from kedro.framework.context import load_context # isort:skip
+{%- elif kedro_version == 15 %}
 from kedro.context import load_context  # isort:skip
-{%- endif %}
-
-{% if context_compatibility_mode %}
+{%- else %}
+from kedro.cli.cli import get_project_context  # isort:skip
 {#- NOTE: kedro_cli needs to be importable for kedro<0.15.0 #}
 # Make `kedro_cli` importable
 sys.path.append("{{ project_path }}")
-{%- else %}
-{#- NOTE: There's a bug in kedro==0.15.0, failing to add this path in `load_context` #}
-# Get our project source onto the python path
-sys.path.append("{{ project_path }}/src")
 {%- endif %}
 
 # Path to Kedro project directory
@@ -96,7 +91,7 @@ dag = DAG(
     catchup=False
 )
 
-{% if context_compatibility_mode %}
+{% if kedro_version == 14 %}
 config = get_project_context('get_config')(project_path)
 data_catalog = get_project_context('create_catalog')(config)
 pipeline = get_project_context('create_pipeline')()

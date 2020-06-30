@@ -32,10 +32,19 @@ from pathlib import Path
 from shutil import copy
 
 import click
+import kedro
 from click import secho
 from jinja2 import Template
-from kedro.cli import get_project_context
+from semver import VersionInfo
 from slugify import slugify
+
+KEDRO_VERSION = VersionInfo.parse(kedro.__version__)
+
+if KEDRO_VERSION.match(">=0.16.0"):
+    from kedro.framework.cli import get_project_context
+else:
+    # pylint: disable=no-name-in-module,import-error
+    from kedro.cli import get_project_context  # pragma: no cover
 
 
 @click.group(name="Airflow")
@@ -67,20 +76,18 @@ def create():
     template = Template(
         src_file.read_text(encoding="utf-8"), keep_trailing_newline=True
     )
-
-    try:
-        # pylint: disable=unused-import,import-outside-toplevel
-        from kedro.context import load_context  # noqa:F401
-
-        context_compatibility_mode = False
-    except ImportError:  # pragma: no coverage
-        context_compatibility_mode = True
+    if KEDRO_VERSION.match(">=0.16.0"):
+        kedro_version = 16
+    elif KEDRO_VERSION.match(">=0.15.0") and KEDRO_VERSION.match("<0.16.0"):
+        kedro_version = 15
+    else:
+        kedro_version = 14
 
     dest_file.write_text(
         template.render(
             project_name=get_project_context("project_name"),
             project_path=get_project_context("project_path"),
-            context_compatibility_mode=context_compatibility_mode,
+            kedro_version=kedro_version,
         ),
         encoding="utf-8",
     )

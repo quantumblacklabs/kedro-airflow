@@ -45,8 +45,8 @@ def init_airflow(context):
     assert res.returncode == 0
 
 
-@given("I have prepared a data catalog")
-def prepare_catalog(context):
+@given("I have prepared an old data catalog")
+def prepare_old_catalog(context):
     config = {
         "example_train_x": {
             "type": "PickleLocalDataSet",
@@ -76,6 +76,54 @@ def prepare_catalog(context):
     catalog_file = context.root_project_dir / "conf" / "local" / "catalog.yml"
     with catalog_file.open("w") as catalog_file:
         yaml.dump(config, catalog_file, default_flow_style=False)
+
+
+@given("I have prepared a data catalog")
+def prepare_catalog(context):
+    config = {
+        "example_train_x": {
+            "type": "pickle.PickleDataSet",
+            "filepath": "data/02_intermediate/example_train_x.pkl",
+        },
+        "example_train_y": {
+            "type": "pickle.PickleDataSet",
+            "filepath": "data/02_intermediate/example_train_y.pkl",
+        },
+        "example_test_x": {
+            "type": "pickle.PickleDataSet",
+            "filepath": "data/02_intermediate/example_test_x.pkl",
+        },
+        "example_test_y": {
+            "type": "pickle.PickleDataSet",
+            "filepath": "data/02_intermediate/example_test_y.pkl",
+        },
+        "example_model": {
+            "type": "pickle.PickleDataSet",
+            "filepath": "data/02_intermediate/example_model.pkl",
+        },
+        "example_predictions": {
+            "type": "pickle.PickleDataSet",
+            "filepath": "data/02_intermediate/example_predictions.pkl",
+        },
+    }
+    catalog_file = context.root_project_dir / "conf" / "local" / "catalog.yml"
+    with catalog_file.open("w") as catalog_file:
+        yaml.dump(config, catalog_file, default_flow_style=False)
+
+
+@given('I have installed kedro version "{version}"')
+def install_kedro(context, version):
+    """Execute Kedro command and check the status."""
+    if version == "latest":
+        cmd = [context.pip, "install", "-U", "kedro"]
+    else:
+        cmd = [context.pip, "install", "kedro=={}".format(version)]
+    res = run(cmd, env=context.env)
+
+    if res.returncode != OK_EXIT_CODE:
+        print(res.stdout)
+        print(res.stderr)
+        assert False
 
 
 @when('I execute the airflow command "{command}"')

@@ -28,6 +28,8 @@
 import os
 from pathlib import Path
 
+from semver import VersionInfo
+
 from kedro_airflow.plugin import commands
 
 
@@ -36,6 +38,30 @@ def a_function():  # pragma: no cover
 
 
 def test_create_airflow_dag(cli_runner, mocker):
+    project_context = {
+        "project_path": Path.cwd(),
+        "project_name": "Hello '-\u2603_-' world !!!",
+    }
+    mocker.patch("kedro_airflow.plugin.get_project_context", project_context.get)
+    result = cli_runner.invoke(commands, ["airflow", "create"])
+    assert result.exit_code == 0
+    assert (Path.cwd() / "airflow_dags" / "hello_world_dag.py").exists()
+
+
+def test_create_airflow_dag_kedro15(cli_runner, mocker):
+    mocker.patch("kedro_airflow.plugin.KEDRO_VERSION", VersionInfo.parse("0.15.9"))
+    project_context = {
+        "project_path": Path.cwd(),
+        "project_name": "Hello '-\u2603_-' world !!!",
+    }
+    mocker.patch("kedro_airflow.plugin.get_project_context", project_context.get)
+    result = cli_runner.invoke(commands, ["airflow", "create"])
+    assert result.exit_code == 0
+    assert (Path.cwd() / "airflow_dags" / "hello_world_dag.py").exists()
+
+
+def test_create_airflow_dag_kedro14(cli_runner, mocker):
+    mocker.patch("kedro_airflow.plugin.KEDRO_VERSION", VersionInfo.parse("0.14.2"))
     project_context = {
         "project_path": Path.cwd(),
         "project_name": "Hello '-\u2603_-' world !!!",
@@ -56,6 +82,6 @@ def test_deploy_airflow_dag(cli_runner, mocker):
     mocker.patch.dict(os.environ, {"AIRFLOW_HOME": str(Path.cwd())})
     result = cli_runner.invoke(commands, ["airflow", "deploy"])
     assert result.exit_code == 0
-    copy.assert_called_with(
+    copy.assert_called_once_with(
         "/my_project/airflow_dags/hello_world_dag.py", str(Path.cwd() / "dags")
     )
