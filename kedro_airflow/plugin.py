@@ -60,8 +60,13 @@ def airflow_commands():
 
 
 def _get_dag_filename():
-    project_path = get_project_context("project_path")
-    project_name = get_project_context("project_name")
+    if KEDRO_VERSION.match(">=0.15.0"):
+        context = get_project_context("context")
+        project_path = context.project_path
+        project_name = context.project_name
+    else:
+        project_path = get_project_context("project_path")
+        project_name = get_project_context("project_name")
     dest_dir = project_path / "airflow_dags"
     return dest_dir / (slugify(project_name, separator="_") + "_dag.py")
 
@@ -78,15 +83,23 @@ def create():
     )
     if KEDRO_VERSION.match(">=0.16.0"):
         kedro_version = 16
+        context = get_project_context("context")
+        project_path = context.project_path
+        project_name = context.project_name
     elif KEDRO_VERSION.match(">=0.15.0") and KEDRO_VERSION.match("<0.16.0"):
         kedro_version = 15
+        context = get_project_context("context")
+        project_path = context.project_path
+        project_name = context.project_name
     else:
         kedro_version = 14
+        project_name = get_project_context("project_name")
+        project_path = get_project_context("project_path")
 
     dest_file.write_text(
         template.render(
-            project_name=get_project_context("project_name"),
-            project_path=get_project_context("project_path"),
+            project_name=project_name,
+            project_path=project_path,
             kedro_version=kedro_version,
         ),
         encoding="utf-8",
