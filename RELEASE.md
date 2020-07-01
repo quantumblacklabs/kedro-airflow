@@ -1,3 +1,9 @@
+# Upcoming release
+
+## Major features and improvements
+
+## Thanks for supporting contributions
+
 # Release 0.3.0
 
 ## Major features and improvements
