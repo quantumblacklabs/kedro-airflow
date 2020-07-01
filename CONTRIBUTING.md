@@ -42,7 +42,7 @@ Working on your first pull request? You can learn how from these resources:
  - We use [Anaconda](https://www.anaconda.com/distribution/) as a preferred virtual environment
  - We use [SemVer](https://semver.org/) for versioning
 
-Our code is designed to be compatible with Python 3.5 onwards and our style guidelines are (in cascading order):
+Our code is designed to be compatible with Python 3.6 onwards and our style guidelines are (in cascading order):
 
 * [PEP 8 conventions](https://www.python.org/dev/peps/pep-0008/) for all Python code
 * [Google docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) for code comments
@@ -59,12 +59,12 @@ def count_truthy(elements: List[Any]) -> int:
 
 We use a branching model that helps us keep track of branches in a logical, consistent way. All branches should have the hyphen-separated convention of: `<type-of-change>/<short-description-of-change>` e.g. `feature/awesome-new-feature`
 
-| Types of changes | Description                                                                  |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `docs`           | Changes to the documentation of the plugin                                   |
-| `feature`        | Non-breaking change which adds functionality                                 |
-| `fix`            | Non-breaking change which fixes an issue                                     |
-| `tests`          | Changes to project unit (`tests/`) and / or integration (`features/`) tests  |
+| Types of changes | Description                                                                 |
+| ---------------- | --------------------------------------------------------------------------- |
+| `docs`           | Changes to the documentation of the plugin                                  |
+| `feature`        | Non-breaking change which adds functionality                                |
+| `fix`            | Non-breaking change which fixes an issue                                    |
+| `tests`          | Changes to project unit (`tests/`) and / or integration (`features/`) tests |
 
 ## Plugin contribution process
 

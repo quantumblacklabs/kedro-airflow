@@ -9,17 +9,16 @@ install-pip-setuptools:
 	python -m pip install -U pip setuptools wheel
 
 lint:
-	isort
-	pylint -j 0 --disable=unnecessary-pass kedro_airflow
-	pylint -j 0 --disable=missing-docstring,redefined-outer-name,no-self-use,invalid-name tests
-	pylint -j 0 --disable=missing-docstring,no-name-in-module features
-	flake8 kedro_airflow tests features
+	pre-commit run -a --hook-stage manual
 
 test:
 	pytest tests
 
 e2e-tests:
 	behave
+
+secret-scan:
+	trufflehog --max_depth 1 .
 
 legal:
 	python tools/license_and_headers.py

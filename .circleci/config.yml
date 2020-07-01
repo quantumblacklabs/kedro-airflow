@@ -1,15 +1,15 @@
 version: 2
 jobs:
-  build_35: &DEFAULT
-     machine:
-       # Don't use 2018 image: https://discuss.circleci.com/t/24639/18
-       image: circleci/classic:201711-01
-       docker_layer_caching: true
-     environment:
-      CONDA_ENV_PY_VERSION: 3.5.4
-     steps:
-       - checkout
-       - run:
+  build_36: &DEFAULT
+    machine:
+      # Don't use 2018 image: https://discuss.circleci.com/t/24639/18
+      image: circleci/classic:201711-01
+      docker_layer_caching: true
+    environment:
+      CONDA_ENV_PY_VERSION: "3.6"
+    steps:
+      - checkout
+      - run:
           name: Create virtual env
           command: |
             # Get rid of pyenv stuff
@@ -25,7 +25,7 @@ jobs:
             . /home/circleci/miniconda/etc/profile.d/conda.sh
             conda create --name kedro-airflow python=${CONDA_ENV_PY_VERSION} -y
             source $BASH_ENV
-       - run:
+      - run:
           name: Pip install dependencies
           command: |
             make install-pip-setuptools
@@ -33,27 +33,25 @@ jobs:
             export AIRFLOW_GPL_UNIDECODE=yes
             pip install -r requirements.txt
             pip install -r test_requirements.txt
-       - run:
+            pre-commit install --install-hooks
+            pre-commit install --hook-type pre-push
+      - run:
           name: Run pylint and flake8
           command: |
             make lint
-       - run:
+      - run:
           name: Run tests
           command: |
             make test
-       - run:
+      - run:
           name: Run all end to end tests
           command: |
             make e2e-tests
-       - run:
+      - run:
           name: Check for legal compliance
           command: |
             make legal
 
-  build_36:
-    <<: *DEFAULT
-    environment:
-      CONDA_ENV_PY_VERSION: 3.6
   build_37:
     <<: *DEFAULT
     environment:
@@ -63,6 +61,17 @@ workflows:
   version: 2
   regular:
     jobs:
-      - build_35
+      - build_36
+      - build_37
+  daily:
+    triggers:
+      - schedule:
+          cron: "0 1 * * *"
+          filters:
+            branches:
+              only:
+                - develop
+                - master
+    jobs:
       - build_36
       - build_37

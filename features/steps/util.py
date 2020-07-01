@@ -1,4 +1,4 @@
-# Copyright 2018-2019 QuantumBlack Visual Analytics Limited
+# Copyright 2020 QuantumBlack Visual Analytics Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,14 +30,10 @@
 """Common functions for e2e testing.
 """
 
-import os
-import subprocess
 import tempfile
 import urllib.request
 import venv
 from pathlib import Path
-
-PIP_INSTALL_SCRIPT = "https://bootstrap.pypa.io/get-pip.py"
 
 
 def download_url(url: str) -> str:
@@ -55,31 +51,13 @@ def download_url(url: str) -> str:
         return http_response_obj.read().decode()
 
 
-def create_new_venv() -> str:
-    """
-    Create a new venv
-
-    Note: Due to a bug in Python 3.5.2 pip needs to be manually installed
+def create_new_venv() -> Path:
+    """Create a new venv.
 
     Returns:
         path to created venv
     """
     # Create venv
-    venv_dir = tempfile.mkdtemp()
-    venv.main([venv_dir, "--without-pip"])
-
-    if os.name == "posix":
-        python_executable = Path(venv_dir) / "bin" / "python"
-    else:
-        python_executable = Path(venv_dir) / "Scripts" / "python.exe"
-
-    # Download and run pip installer
-    # Windows blocks access unless delete set to False
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        tmp_file.write(download_url(PIP_INSTALL_SCRIPT).encode())
-        tmp_file.flush()
-        os.fsync(tmp_file)
-        subprocess.check_call([str(python_executable), tmp_file.name])
-
-    os.unlink(tmp_file.name)
+    venv_dir = Path(tempfile.mkdtemp())
+    venv.main([str(venv_dir)])
     return venv_dir

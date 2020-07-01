@@ -1,4 +1,4 @@
-# Copyright 2018-2019 QuantumBlack Visual Analytics Limited
+# Copyright 2020 QuantumBlack Visual Analytics Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,10 +32,19 @@ from pathlib import Path
 from shutil import copy
 
 import click
+import kedro
 from click import secho
 from jinja2 import Template
-from kedro.cli import get_project_context
+from semver import VersionInfo
 from slugify import slugify
+
+KEDRO_VERSION = VersionInfo.parse(kedro.__version__)
+
+if KEDRO_VERSION.match(">=0.16.0"):
+    from kedro.framework.cli import get_project_context
+else:
+    # pylint: disable=no-name-in-module,import-error
+    from kedro.cli import get_project_context  # pragma: no cover
 
 
 @click.group(name="Airflow")
@@ -51,8 +60,13 @@ def airflow_commands():
 
 
 def _get_dag_filename():
-    project_path = get_project_context("project_path")
-    project_name = get_project_context("project_name")
+    if KEDRO_VERSION.match(">=0.15.0"):
+        context = get_project_context("context")
+        project_path = context.project_path
+        project_name = context.project_name
+    else:
+        project_path = get_project_context("project_path")
+        project_name = get_project_context("project_name")
     dest_dir = project_path / "airflow_dags"
     return dest_dir / (slugify(project_name, separator="_") + "_dag.py")
 
@@ -67,21 +81,26 @@ def create():
     template = Template(
         src_file.read_text(encoding="utf-8"), keep_trailing_newline=True
     )
-
-    try:
-        from kedro.context import (  # noqa:F401 pylint: disable=unused-import
-            load_context,
-        )
-
-        context_compatibility_mode = False
-    except ImportError:  # pragma: no coverage
-        context_compatibility_mode = True
+    if KEDRO_VERSION.match(">=0.16.0"):
+        kedro_version = 16
+        context = get_project_context("context")
+        project_path = context.project_path
+        project_name = context.project_name
+    elif KEDRO_VERSION.match(">=0.15.0") and KEDRO_VERSION.match("<0.16.0"):
+        kedro_version = 15
+        context = get_project_context("context")
+        project_path = context.project_path
+        project_name = context.project_name
+    else:
+        kedro_version = 14
+        project_name = get_project_context("project_name")
+        project_path = get_project_context("project_path")
 
     dest_file.write_text(
         template.render(
-            project_name=get_project_context("project_name"),
-            project_path=get_project_context("project_path"),
-            context_compatibility_mode=context_compatibility_mode,
+            project_name=project_name,
+            project_path=project_path,
+            kedro_version=kedro_version,
         ),
         encoding="utf-8",
     )

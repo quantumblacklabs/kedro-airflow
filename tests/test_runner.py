@@ -1,4 +1,4 @@
-# Copyright 2018-2019 QuantumBlack Visual Analytics Limited
+# Copyright 2020 QuantumBlack Visual Analytics Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -192,4 +192,12 @@ def test_no_memory_datasets():
     pipeline = Pipeline([Node(lambda: None, [], "fred")])
     catalog = DataCatalog({"fred": MemoryDataSet()})
     with pytest.raises(ValueError, match="memory data sets: 'fred'"):
+        AirflowRunner(None, None, {}).run(pipeline, catalog)
+
+
+def test_unsatisfied_input():
+    pipeline = Pipeline([Node(lambda a: None, ["a"], None)])
+    catalog = DataCatalog()
+    pattern = r"Pipeline input\(s\) \{\'a\'\} not found in the DataCatalog"
+    with pytest.raises(ValueError, match=pattern):
         AirflowRunner(None, None, {}).run(pipeline, catalog)

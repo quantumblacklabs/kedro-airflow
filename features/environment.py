@@ -1,4 +1,4 @@
-# Copyright 2018-2019 QuantumBlack Visual Analytics Limited
+# Copyright 2020 QuantumBlack Visual Analytics Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ from features.steps.sh_run import run
 from features.steps.util import create_new_venv
 
 
-def before_all(context):
+def before_scenario(context, scenario):  # pylint: disable=unused-argument
     """Environment preparation before other cli tests are run.
     Installs kedro by running pip in the top level directory.
     """
@@ -52,7 +52,7 @@ def before_all(context):
         assert res.returncode == 0
 
     # make a venv
-    context.venv_dir = Path(create_new_venv())
+    context.venv_dir = create_new_venv()
 
     # note the locations of some useful stuff
     # this is because exe resolution in supbrocess doens't respect a passed env
@@ -88,19 +88,14 @@ def before_all(context):
         call([context.pip, "install", "-r", str(complied_reqs)])
     call([context.pip, "install", "."])
 
-
-def after_all(context):
-    rmtree(str(context.venv_dir))
-
-
-def before_scenario(context, feature):
     # pylint: disable=unused-argument
     context.temp_dir = Path(tempfile.mkdtemp())
 
 
-def after_scenario(context, feature):
+def after_scenario(context, scenario):
     # pylint: disable=unused-argument
     rmtree(str(context.temp_dir))
+    rmtree(str(context.venv_dir))
 
 
 def rmtree(top):

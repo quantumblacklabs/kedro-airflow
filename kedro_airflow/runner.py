@@ -1,4 +1,4 @@
-# Copyright 2018-2019 QuantumBlack Visual Analytics Limited
+# Copyright 2020 QuantumBlack Visual Analytics Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@
 # limitations under the License.
 
 
-"""``AirflowRunner`` is an ``AbstractRunner`` implementation. It can
-be used to convert the ``Pipeline`` into Airflow operators.
+"""``AirflowRunner`` is used to convert the ``Pipeline`` into Airflow operators.
 """
 
 from typing import Callable
@@ -37,13 +36,12 @@ from airflow.operators.python_operator import PythonOperator
 from kedro.io import DataCatalog, MemoryDataSet
 from kedro.pipeline import Pipeline
 from kedro.pipeline.node import Node
-from kedro.runner import AbstractRunner, run_node
+from kedro.runner import run_node
 from slugify import slugify
 
 
-class AirflowRunner(AbstractRunner):
-    """``AirflowRunner`` is an ``AbstractRunner`` implementation. It can
-    be used to convert the ``Pipeline`` into Airflow operators.
+class AirflowRunner:
+    """``AirflowRunner`` is used to convert the ``Pipeline`` into Airflow operators.
     """
 
     def __init__(self, dag, process_context, operator_arguments):
@@ -74,7 +72,7 @@ class AirflowRunner(AbstractRunner):
 
     def create_default_data_set(
         self, ds_name: str, max_loads: int = None
-    ):  # pylint: disable=arguments-differ
+    ):  # pylint: disable=no-self-use
         """Factory method for creating the default data set for the runner.
 
         Args:
@@ -91,6 +89,32 @@ class AirflowRunner(AbstractRunner):
             "Data set '{}' is not registered in the data catalog.\n"
             "AirflowRunner does not support unregistered data sets.".format(ds_name)
         )
+
+    def run(self, pipeline: Pipeline, catalog: DataCatalog) -> None:
+        """Overriding the run method of AbstractRunner, which runs the ``Pipeline``
+        using the ``DataSet``s provided by ``catalog``.
+
+        Args:
+            pipeline: The ``Pipeline`` to run.
+            catalog: The ``DataCatalog`` from which to fetch data.
+
+        Raises:
+            ValueError: Raised when ``Pipeline`` inputs cannot be satisfied.
+
+        """
+        catalog = catalog.shallow_copy()
+        unsatisfied = pipeline.inputs() - set(catalog.list())
+        if unsatisfied:
+            raise ValueError(
+                "Pipeline input(s) {} not found in the "
+                "DataCatalog".format(unsatisfied)
+            )
+
+        unregistered_ds = pipeline.data_sets() - set(catalog.list())
+        for ds_name in unregistered_ds:
+            catalog.add(ds_name, self.create_default_data_set(ds_name))
+
+        self._run(pipeline, catalog)
 
     def _run(self, pipeline: Pipeline, catalog: DataCatalog) -> None:
         """The method implementing sequential pipeline running.

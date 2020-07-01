@@ -1,3 +1,15 @@
+# Release 0.3.0
+
+## Major features and improvements
+* Dropped support for Python 3.5.
+* Changed default DAG schedule interval to `None`.
+* Changed default DAG catchup to be `False`.
+* Fixed a bug that was logging unnecessary Kedro messages when running Airflow commands.
+* Fixed a bug for processing Airflow context in DAG template.
+
+## Thanks for supporting contributions
+[@pitterb](https://github.com/pitterb)
+
 # Release 0.2.2
 
 ## Major features and improvements
