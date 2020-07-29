@@ -1,6 +1,7 @@
 # Upcoming release
 
 ## Major features and improvements
+* Added support for Python 3.8.
 
 ## Thanks for supporting contributions
 

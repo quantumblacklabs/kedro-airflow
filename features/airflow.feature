@@ -33,6 +33,7 @@ Feature: Airflow
   Background:
     Given I have initialized Airflow
 
+  @no_python38
   Scenario: Print a list of tasks with Kedro 0.14.2
     Given I have installed kedro version "0.14.2"
     And I have prepared a config file
@@ -44,6 +45,7 @@ Feature: Airflow
     Then I should get a successful exit code
     And I should get a message including "report-accuracy-example-predictions-example-test-y-none"
 
+  @no_python38
   Scenario: Run Airflow task locally with Kedro 0.14.2
     Given I have installed kedro version "0.14.2"
     And I have prepared a config file
@@ -55,6 +57,7 @@ Feature: Airflow
     Then I should get a successful exit code
     And I should get a message including "Loading data from `parameters`"
 
+  @no_python38
   Scenario: Print a list of tasks with Kedro 0.15.9
     Given I have installed kedro version "0.15.9"
     And I have prepared a config file
@@ -66,6 +69,7 @@ Feature: Airflow
     Then I should get a successful exit code
     And I should get a message including "report-accuracy-example-predictions-example-test-y-none"
 
+  @no_python38
   Scenario: Run Airflow task locally with Kedro 0.15.9
     Given I have installed kedro version "0.15.9"
     And I have prepared a config file

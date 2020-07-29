@@ -31,11 +31,18 @@
 import os
 import shutil
 import stat
+import sys
 import tempfile
 from pathlib import Path
 
 from features.steps.sh_run import run
 from features.steps.util import create_new_venv
+
+NO_PYTHON38_TAG = "no_python38"
+
+
+def _is_python38(scenario):
+    return NO_PYTHON38_TAG in scenario.tags and "3.8" in sys.version_info[:2] == (3, 8)
 
 
 def before_scenario(context, scenario):  # pylint: disable=unused-argument
@@ -51,6 +58,9 @@ def before_scenario(context, scenario):  # pylint: disable=unused-argument
             print(res.stderr)
         assert res.returncode == 0
 
+    if _is_python38(scenario):
+        scenario.skip("Skip for Python38")
+        return
     # make a venv
     context.venv_dir = create_new_venv()
 
@@ -94,6 +104,8 @@ def before_scenario(context, scenario):  # pylint: disable=unused-argument
 
 def after_scenario(context, scenario):
     # pylint: disable=unused-argument
+    if _is_python38(scenario):
+        return
     rmtree(str(context.temp_dir))
     rmtree(str(context.venv_dir))
 
