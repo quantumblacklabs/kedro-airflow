@@ -42,7 +42,7 @@ NO_PYTHON38_TAG = "no_python38"
 
 
 def _is_python38(scenario):
-    return NO_PYTHON38_TAG in scenario.tags and "3.8" in sys.version_info[:2] == (3, 8)
+    return NO_PYTHON38_TAG in scenario.tags and sys.version_info[:2] == (3, 8)
 
 
 def before_scenario(context, scenario):  # pylint: disable=unused-argument
