@@ -1,3 +1,4 @@
+anyconfig>=0.10.0 # not directly required, pinned by Snyk to avoid a vulnerability
 apache-airflow<1.11
 kedro>=0.17.0
 python-slugify<4.1.0 # dependency of text-unidecode version doesn't work with the version of text-unicode from apache-airflow
