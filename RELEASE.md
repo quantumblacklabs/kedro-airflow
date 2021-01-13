@@ -1,7 +1,8 @@
-# Upcoming release
+# Release 0.4.0
 
 ## Major features and improvements
 * Added support for Python 3.8.
+* Added support for Kedro 0.17.
 
 ## Thanks for supporting contributions
 
