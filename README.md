@@ -13,7 +13,7 @@
 - Automatic dependency resolution in Kedro. This allows you to bypass Airflow's need to specify the order of your tasks.
 - Distributing Kedro tasks across many workers. You can also enable monitoring and scheduling of the tasks' runtimes.
 
-## How do I install Kedro-Airflow?
+## Installation
 
 `kedro-airflow` is a Python plugin. To install it:
 
@@ -21,72 +21,26 @@
 pip install kedro-airflow
 ```
 
-## How do I use Kedro-Airflow?
+## Usage
 
-The Kedro-Airflow plugin adds a `kedro airflow create` CLI command that generates an Airflow DAG file in the `airflow_dags` folder of your project. At runtime, this file translates your Kedro pipeline into Airflow Python operators. This DAG object can be modified according to your needs and you can then deploy your project to Airflow by running `kedro airflow deploy`.
+You can use `kedro-airflow` to deploy a Kedro pipeline as an Airflow DAG by following these steps:
 
-### Prerequisites
+### Step 1: Generate the DAG file
 
-The following conditions must be true for Airflow to run your pipeline:
-* Your project directory must be available to the Airflow runners in the directory listed at the top of the DAG file.
-* Your source code must be on the Python path (by default the DAG file takes care of this).
-* All datasets must be explicitly listed in `catalog.yml` and reachable for the Airflow workers. Kedro-Airflow does not support `MemoryDataSet` or datasets that require Spark.
-* All local paths in configuration files (notably in `catalog.yml` and `logging.yml`) should be absolute paths and not relative paths.
+At the root directory of the Kedro project, run:
 
-### Process
-
-1. Run `kedro airflow create` to generate a DAG file for your project.
-2. If needed, customize the DAG file as described [below](https://github.com/quantumblacklabs/kedro-airflow/blob/master/README.md#customization).
-3. Run `kedro airflow deploy` which will copy the DAG file from the `airflow_dags` folder in your Kedro project into the `dags` folder in the Airflow home directory.
-
-> *Note:* The generated DAG file will be placed in `$AIRFLOW_HOME/dags/` when `kedro airflow deploy` is run, where `AIRFLOW_HOME` is an environment variable. If the environment variable is not defined, Kedro-Airflow will create `~/airflow` and `~/airflow/dags` (if required) and copy the DAG file into it.
-
-## Customization
-
-There are a number of items in the DAG file that you may want to customize including:
-- Source location,
-- Project location,
-- DAG construction,
-- Default operator arguments,
-- Operator-specific arguments,
-- And / or Airflow context and execution date.
-
-The following sections guide you to the appropriate location within the file.
-
-### Source location
-
-The line `sys.path.append("/Users/<user-name>/new-kedro-project/src")` enables Python and Airflow to find your project source.
-
-### Project location
-
-The line `project_path = "/Users/<user-name>/new-kedro-project"` sets the location for your project directory. This is passed to your `get_config` method.
-
-### DAG construction
-
-The construction of the actual DAG object can be altered as needed. You can learn more about how to do this by going through the [Airflow tutorial](https://airflow.apache.org/tutorial.html).
-
-### Default operator arguments
-
-The default arguments for the Airflow operators are contained in the `default_args` dictionary.
-
-### Operator-specific arguments
-
-The `operator_specific_arguments` callback is called to retrieve any additional arguments specific to individual operators. It is passed the Airflow `task_id` and should return a dictionary of additional arguments. For example, to change the number of retries on node named `analysis` to 5 you may have:
-
-```python
-def operator_specific_arguments(task_id):
-    if task_id == "analysis":
-        return {"retries": 5}
-    return {}
+```bash
+kedro airflow create
 ```
-The easiest way to find the correct `task_id` is to use Airflow's `list_tasks` command.
 
-### Airflow context and execution date
+This command will generate an Airflow DAG file located in the `airflow_dags/` directory in your project.
+You can pass a `--pipeline` flag to generate the DAG file for a specific Kedro pipeline and an `--env` flag to generate the DAG file for a specific Kedro environment.
 
-The `process_context` callback provides a hook for ingesting Airflow's Jinja context. It is called before every node, receives the context and catalog and must return a catalog. A common use of this is to pick up the execution date and either insert it into the catalog or modify the catalog based on it.
+### Step 2: Copy the DAG file to the Airflow DAGs folder.
 
-The list of default context variables is available in the Airflow [documentation](https://airflow.apache.org/code.html#default-variables).
+For more information about the DAGs folder, please visit [Airflow documentation](https://airflow.apache.org/docs/stable/concepts.html#dags).
 
-## What licence do you use?
+### Step 3: Package and install the Kedro pipeline in the Airflow executor's environment
 
-Kedro-Airflow is licensed under the [Apache 2.0](https://github.com/quantumblacklabs/kedro-airflow/blob/master/LICENSE.md) License.
+After generating and deploying the DAG file, you will then need to package and install the Kedro pipeline into the Airflow executor's environment.
+Please visit the guide to [deploy Kedro as a Python package](https://kedro.readthedocs.io/en/latest/10_deployment/01_single_machine.html#package-based) for more details.
