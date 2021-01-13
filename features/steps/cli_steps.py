@@ -37,9 +37,9 @@ from features.steps.sh_run import run
 OK_EXIT_CODE = 0
 
 
-@given("I have initialized Airflow")
-def init_airflow(context):
-    context.airflow_dir = context.temp_dir / "airflow"
+@given('I have initialized Airflow with home dir "{home_dir}"')
+def init_airflow(context, home_dir):
+    context.airflow_dir = context.temp_dir / home_dir
     context.env["AIRFLOW_HOME"] = str(context.airflow_dir)
     res = run([context.airflow, "initdb"], env=context.env)
     assert res.returncode == 0
@@ -115,10 +115,22 @@ def prepare_catalog(context):
 def install_kedro(context, version):
     """Execute Kedro command and check the status."""
     if version == "latest":
-        cmd = [context.pip, "install", "-U", "kedro"]
+        cmd = [context.pip, "install", "-U", "kedro[pandas]"]
     else:
-        cmd = [context.pip, "install", "kedro=={}".format(version)]
+        cmd = [context.pip, "install", "kedro[pandas]=={}".format(version)]
     res = run(cmd, env=context.env)
+
+    if res.returncode != OK_EXIT_CODE:
+        print(res.stdout)
+        print(res.stderr)
+        assert False
+
+
+@given("I have installed the kedro project package")
+def install_project_package(context):
+    """Install the packaged project."""
+    cmd = [context.pip, "install", "-e", "src/"]
+    res = run(cmd, env=context.env, cwd=str(context.root_project_dir))
 
     if res.returncode != OK_EXIT_CODE:
         print(res.stdout)
@@ -159,7 +171,6 @@ def create_configuration_file(context):
         "repo_name": context.project_name,
         "output_dir": str(context.temp_dir),
         "python_package": context.project_name.replace("-", "_"),
-        "include_example": True,
     }
     with context.config_file.open("w") as config_file:
         yaml.dump(config, config_file, default_flow_style=False)
@@ -170,8 +181,22 @@ def create_project_from_config_file(context):
     """Behave step to run kedro new
     given the config I previously created.
     """
-    res = run([context.kedro, "new", "-c", str(context.config_file)], env=context.env)
-    assert res.returncode == 0
+    res = run(
+        [
+            context.kedro,
+            "new",
+            "-c",
+            str(context.config_file),
+            "--starter",
+            "pandas-iris",
+        ],
+        env=context.env,
+        cwd=str(context.temp_dir),
+    )
+    if res.returncode != OK_EXIT_CODE:
+        print(res.stdout)
+        print(res.stderr)
+        assert False
 
 
 @given('I have executed the kedro command "{command}"')

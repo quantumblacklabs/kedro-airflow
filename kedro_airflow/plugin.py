@@ -27,24 +27,15 @@
 # limitations under the License.
 """ Kedro plugin for running a project with Airflow """
 
-import os
+from collections import defaultdict
 from pathlib import Path
-from shutil import copy
 
 import click
-import kedro
+import jinja2
 from click import secho
-from jinja2 import Template
-from semver import VersionInfo
+from kedro.framework.session import KedroSession
+from kedro.framework.startup import ProjectMetadata
 from slugify import slugify
-
-KEDRO_VERSION = VersionInfo.parse(kedro.__version__)
-
-if KEDRO_VERSION.match(">=0.16.0"):
-    from kedro.framework.cli import get_project_context
-else:
-    # pylint: disable=no-name-in-module,import-error
-    from kedro.cli import get_project_context  # pragma: no cover
 
 
 @click.group(name="Airflow")
@@ -59,55 +50,55 @@ def airflow_commands():
     pass
 
 
-def _get_dag_filename():
-    if KEDRO_VERSION.match(">=0.15.0"):
-        context = get_project_context("context")
-        project_path = context.project_path
-        project_name = context.project_name
-    else:
-        project_path = get_project_context("project_path")
-        project_name = get_project_context("project_name")
-    dest_dir = project_path / "airflow_dags"
-    return dest_dir / (slugify(project_name, separator="_") + "_dag.py")
-
-
 @airflow_commands.command()
-def create():
+@click.option("-p", "--pipeline", "pipeline_name", default="__default__")
+@click.option("-e", "--env", default="local")
+@click.option(
+    "-t",
+    "--target-dir",
+    "target_path",
+    type=click.Path(writable=True, resolve_path=True, file_okay=False),
+    default="./airflow_dags/",
+)
+@click.pass_obj
+def create(
+    metadata: ProjectMetadata, pipeline_name, env, target_path
+):  # pylint: disable=too-many-locals
     """Create an Airflow DAG for a project"""
+    loader = jinja2.FileSystemLoader(str(Path(__file__).parent))
+    jinja_env = jinja2.Environment(autoescape=True, loader=loader, lstrip_blocks=True)
+    jinja_env.filters["slugify"] = slugify
+    template = jinja_env.get_template("airflow_dag_template.j2")
 
-    src_file = Path(__file__).parent / "dag_template.py"
-    dest_file = _get_dag_filename()
-    dest_file.parent.mkdir(parents=True, exist_ok=True)
-    template = Template(
-        src_file.read_text(encoding="utf-8"), keep_trailing_newline=True
-    )
-    if KEDRO_VERSION.match(">=0.16.0"):
-        kedro_version = 16
-        context = get_project_context("context")
-        project_path = context.project_path
-        project_name = context.project_name
-    elif KEDRO_VERSION.match(">=0.15.0") and KEDRO_VERSION.match("<0.16.0"):
-        kedro_version = 15
-        context = get_project_context("context")
-        project_path = context.project_path
-        project_name = context.project_name
-    else:
-        kedro_version = 14
-        project_name = get_project_context("project_name")
-        project_path = get_project_context("project_path")
+    project_path = metadata.project_path
+    package_name = metadata.package_name
+    dag_filename = f"{package_name}_dag.py"
 
-    dest_file.write_text(
-        template.render(
-            project_name=project_name,
-            project_path=project_path,
-            kedro_version=kedro_version,
-        ),
-        encoding="utf-8",
-    )
+    target_path = Path(target_path)
+    target_path = target_path / dag_filename
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with KedroSession.create(package_name, project_path, env=env) as session:
+        context = session.load_context()
+        pipeline = context.pipelines.get(pipeline_name)
+
+    dependencies = defaultdict(list)
+    for node, parent_nodes in pipeline.node_dependencies.items():
+        for parent in parent_nodes:
+            dependencies[parent].append(node)
+
+    template.stream(
+        dag_name=package_name,
+        dependencies=dependencies,
+        env=env,
+        pipeline_name=pipeline_name,
+        package_name=package_name,
+        pipeline=pipeline,
+    ).dump(str(target_path))
 
     secho("")
     secho("An Airflow DAG has been generated in:", fg="green")
-    secho(str(dest_file))
+    secho(str(target_path))
     secho("This file should be copied to your Airflow DAG folder.", fg="yellow")
     secho(
         "The Airflow configuration can be customized by editing this file.", fg="green"
@@ -128,14 +119,3 @@ def create():
         fg="yellow",
     )
     secho("")
-
-
-@airflow_commands.command()
-def deploy():
-    """Copy DAG to Airflow home"""
-    airflow_home = Path(os.environ.get("AIRFLOW_HOME", "~/airflow"))
-    dags_folder = airflow_home.expanduser().resolve() / "dags"
-    dags_folder.mkdir(exist_ok=True, parents=True)
-    dag_file = _get_dag_filename()
-    secho("Copying {} to {}".format(str(dag_file), str(dags_folder / dag_file.name)))
-    copy(str(dag_file), str(dags_folder))

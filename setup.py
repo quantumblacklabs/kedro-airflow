@@ -33,12 +33,13 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/quantumblacklabs/kedro-airflow",
     author="QuantumBlack Labs",
-    python_requires=">=3.6, <3.8",
+    python_requires=">=3.6, <3.9",
     install_requires=requires,
     tests_require=test_requires,
     license="Apache Software License (Apache 2.0)",
     packages=["kedro_airflow"],
-    package_data={"kedro_airflow": []},
+    package_data={"kedro_airflow": ["kedro_airflow/airflow_dag_template.j2"]},
+    include_package_data=True,
     zip_safe=False,
     entry_points={
         "kedro.project_commands": ["airflow = kedro_airflow.plugin:commands"]

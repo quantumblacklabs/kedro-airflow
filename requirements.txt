@@ -1,4 +1,4 @@
 apache-airflow<1.11
-kedro>=0.14.2
-python-slugify<3.0.4 # dependency of text-unidecode version doesn't work with the version of text-unicode from apache-airflow
+kedro>=0.17.0
+python-slugify<4.1.0 # dependency of text-unidecode version doesn't work with the version of text-unicode from apache-airflow
 semver~=2.10 # Needs to be at least 2.10.0 to get VersionInfo.match

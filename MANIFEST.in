@@ -2,3 +2,4 @@ include README.md
 include LICENSE.md
 include legal_header.txt
 include requirements.txt
+include kedro_airflow/airflow_dag_template.j2

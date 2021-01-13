@@ -25,63 +25,15 @@
 #
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 from pathlib import Path
-
-import pytest
-from semver import VersionInfo
 
 from kedro_airflow.plugin import commands
 
 
-def a_function():  # pragma: no cover
-    pass
-
-
-@pytest.fixture
-def dummy_context(mocker, tmp_path):
-    context = mocker.MagicMock()
-    context.project_path = tmp_path
-    context.project_name = "Hello '-\u2603_-' world !!!"
-    return context
-
-
-def test_create_airflow_dag(cli_runner, tmp_path, mocker, dummy_context):
-    project_context = {"context": dummy_context}
-    mocker.patch("kedro_airflow.plugin.get_project_context", project_context.get)
-    result = cli_runner.invoke(commands, ["airflow", "create"])
+def test_create_airflow_dag(cli_runner, mocker, metadata, session):
+    dag_file = Path.cwd() / "airflow_dags" / "hello_world_dag.py"
+    mocker.patch("kedro_airflow.plugin.KedroSession.create", return_value=session)
+    result = cli_runner.invoke(commands, ["airflow", "create"], obj=metadata)
     assert result.exit_code == 0
-    assert (tmp_path / "airflow_dags" / "hello_world_dag.py").exists()
-
-
-def test_create_airflow_dag_kedro15(cli_runner, tmp_path, mocker, dummy_context):
-    project_context = {"context": dummy_context}
-    mocker.patch("kedro_airflow.plugin.KEDRO_VERSION", VersionInfo.parse("0.15.9"))
-    mocker.patch("kedro_airflow.plugin.get_project_context", project_context.get)
-    result = cli_runner.invoke(commands, ["airflow", "create"])
-    assert result.exit_code == 0
-    assert (tmp_path / "airflow_dags" / "hello_world_dag.py").exists()
-
-
-def test_create_airflow_dag_kedro14(cli_runner, mocker):
-    mocker.patch("kedro_airflow.plugin.KEDRO_VERSION", VersionInfo.parse("0.14.2"))
-    project_context = {
-        "project_path": Path.cwd(),
-        "project_name": "Hello '-\u2603_-' world !!!",
-    }
-    mocker.patch("kedro_airflow.plugin.get_project_context", project_context.get)
-    result = cli_runner.invoke(commands, ["airflow", "create"])
-    assert result.exit_code == 0
-    assert (Path.cwd() / "airflow_dags" / "hello_world_dag.py").exists()
-
-
-def test_deploy_airflow_dag(cli_runner, tmp_path, mocker, dummy_context):
-    project_context = {"context": dummy_context}
-    mocker.patch("kedro_airflow.plugin.get_project_context", project_context.get)
-    copy = mocker.patch("kedro_airflow.plugin.copy")
-    mocker.patch.dict(os.environ, {"AIRFLOW_HOME": str(tmp_path)})
-    result = cli_runner.invoke(commands, ["airflow", "deploy"])
-    assert result.exit_code == 0
-    copy.assert_called_once_with(
-        str(tmp_path / "airflow_dags/hello_world_dag.py"), str(tmp_path / "dags")
-    )
+    assert str(dag_file) in result.output
+    assert dag_file.exists()
