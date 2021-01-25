@@ -1,3 +1,6 @@
+# Release 0.4.1
+* Added support for Airflow>=2.0
+
 # Release 0.4.0
 
 ## Major features and improvements
